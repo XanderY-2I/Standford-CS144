@@ -23,10 +23,10 @@ public:
 
 protected:
   // Please add any additional state to the ByteStream here, and not to the Writer and Reader interfaces.
-  bool isClosed_;//判断字节流开关
+  bool isClosed_; // 判断字节流开关
   std::string buf_;
-  uint64_t bytes_popped_;//已读字节数
-  uint64_t bytes_pushed_;//已写字节数
+  uint64_t bytes_popped_; // 已读字节数
+  uint64_t bytes_pushed_; // 已写字节数
   uint64_t capacity_;
   bool error_ {};
 };

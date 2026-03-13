@@ -10,20 +10,20 @@ using namespace std;
 
 namespace {
 void get_URL( const string& host, const string& path )
-{  
-    Address   addr( host, "http" ); // 目标 addr
-    TCPSocket sock;                 // 创建 TCPSocket
-    sock.connect( addr );           // 与目标 addr 建立连接
-    sock.write( "GET " + path + " HTTP/1.1\r\n" );
-    sock.write( "Host: " + host + "\r\n" );
-    sock.write( "Connection: close\r\n\r\n" );
-    sock.shutdown( SHUT_WR ); // 关闭写
-    string buf;
-    while ( !sock.eof() ) { // 读 HTTP 回答报文
-        sock.read( buf );
-        std::cout << buf;
-    }
-    sock.close(); // 关闭连接
+{
+  Address addr( host, "http" ); // 目标 addr
+  TCPSocket sock;               // 创建 TCPSocket
+  sock.connect( addr );         // 与目标 addr 建立连接
+  sock.write( "GET " + path + " HTTP/1.1\r\n" );
+  sock.write( "Host: " + host + "\r\n" );
+  sock.write( "Connection: close\r\n\r\n" );
+  sock.shutdown( SHUT_WR ); // 关闭写
+  string buf;
+  while ( !sock.eof() ) { // 读 HTTP 回答报文
+    sock.read( buf );
+    std::cout << buf;
+  }
+  sock.close(); // 关闭连接
   debug( "Function called: get_URL( \"{}\", \"{}\" )", host, path );
   debug( "get_URL() function not yet implemented" );
 }

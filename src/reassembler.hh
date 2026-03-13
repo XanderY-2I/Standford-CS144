@@ -2,19 +2,37 @@
 
 #include "byte_stream.hh"
 
+#include <algorithm>
+#include <cmath>
+#include <iostream>
+#include <set>
+#include <string>
+#include <vector>
+
+struct Interval
+{
+  uint64_t start_idx;
+  uint64_t end_idx;
+  std::string data;
+  bool operator<( const Interval& rhs ) const
+  {
+    if ( this->start_idx == rhs.start_idx )
+      return this->end_idx < rhs.end_idx;
+    return this->start_idx < rhs.start_idx;
+  }
+};
+
 class Reassembler
 {
 public:
   // Construct Reassembler to write into given ByteStream.
   explicit Reassembler( ByteStream&& output ) : output_( std::move( output ) ) {}
-
   /*
    * Insert a new substring to be reassembled into a ByteStream.
    *   `first_index`: the index of the first byte of the substring
    *   `data`: the substring itself
    *   `is_last_substring`: this substring represents the end of the stream
    *   `output`: a mutable reference to the Writer
-   *
    * The Reassembler's job is to reassemble the indexed substrings (possibly out-of-order
    * and possibly overlapping) back into the original ByteStream. As soon as the Reassembler
    * learns the next byte in the stream, it should write it to the output.
@@ -43,4 +61,7 @@ public:
 
 private:
   ByteStream output_;
+  std::set<Interval> buf_ {};      // 重组字节流缓存
+  uint64_t next_expected_idx_ = 0; // 顺序字节流期待接收的下一个字节序号
+  uint64_t eof_idx_ = UINT64_MAX;  // 结束序号
 };
