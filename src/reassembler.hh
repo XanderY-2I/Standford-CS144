@@ -1,7 +1,6 @@
 #pragma once
 
 #include "byte_stream.hh"
-
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -9,11 +8,14 @@
 #include <string>
 #include <vector>
 
+// 表示一个数据片段
 struct Interval
 {
-  uint64_t start_idx;
-  uint64_t end_idx;
-  std::string data;
+  uint64_t start_idx;   // 起始字节位置
+  uint64_t end_idx;     // 结束字节位置
+  std::string data;     // 数据内容
+
+  // set排序规则：先按start，再按end
   bool operator<( const Interval& rhs ) const
   {
     if ( this->start_idx == rhs.start_idx )
@@ -25,43 +27,26 @@ struct Interval
 class Reassembler
 {
 public:
-  // Construct Reassembler to write into given ByteStream.
+  // 构造函数，指定输出ByteStream
   explicit Reassembler( ByteStream&& output ) : output_( std::move( output ) ) {}
-  /*
-   * Insert a new substring to be reassembled into a ByteStream.
-   *   `first_index`: the index of the first byte of the substring
-   *   `data`: the substring itself
-   *   `is_last_substring`: this substring represents the end of the stream
-   *   `output`: a mutable reference to the Writer
-   * The Reassembler's job is to reassemble the indexed substrings (possibly out-of-order
-   * and possibly overlapping) back into the original ByteStream. As soon as the Reassembler
-   * learns the next byte in the stream, it should write it to the output.
-   *
-   * If the Reassembler learns about bytes that fit within the stream's available capacity
-   * but can't yet be written (because earlier bytes remain unknown), it should store them
-   * internally until the gaps are filled in.
-   *
-   * The Reassembler should discard any bytes that lie beyond the stream's available capacity
-   * (i.e., bytes that couldn't be written even if earlier gaps get filled in).
-   *
-   * The Reassembler should close the stream after writing the last byte.
-   */
+
+  // 插入一个新的数据片段
+  //first_index: 片段起始位置 data: 数据 is_last_substring: 是否是最后一个片段
   void insert( uint64_t first_index, std::string data, bool is_last_substring );
 
-  // How many bytes are stored in the Reassembler itself?
-  // This function is for testing only; don't add extra state to support it.
+  // 返回当前缓存的字节数（测试用）
   uint64_t count_bytes_pending() const;
 
-  // Access output stream reader
+  // 获取读取接口
   Reader& reader() { return output_.reader(); }
   const Reader& reader() const { return output_.reader(); }
 
-  // Access output stream writer, but const-only (can't write from outside)
+  // 获取写入接口（只读）
   const Writer& writer() const { return output_.writer(); }
 
 private:
-  ByteStream output_;
-  std::set<Interval> buf_ {};      // 重组字节流缓存
-  uint64_t next_expected_idx_ = 0; // 顺序字节流期待接收的下一个字节序号
-  uint64_t eof_idx_ = UINT64_MAX;  // 结束序号
+  ByteStream output_;        // 输出字节流
+  std::set<Interval> buf_ {};  // 缓存乱序数据
+  uint64_t next_expected_idx_ = 0; // 下一个期待的字节序号
+  uint64_t eof_idx_ = UINT64_MAX;  // 流结束位置
 };

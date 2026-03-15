@@ -1,89 +1,90 @@
 #include "byte_stream.hh"
 #include "debug.hh"
-
 using namespace std;
 
+// 构造函数：初始化 ByteStream
 ByteStream::ByteStream( uint64_t capacity )
   : isClosed_( false ), buf_(), bytes_popped_( 0 ), bytes_pushed_( 0 ), capacity_( capacity )
 {}
 
-// Push data to stream, but only as much as available capacity allows.
+// 写入数据，但不能超过剩余容量
 void Writer::push( string data )
 {
-  // Your code here (and in each method below)
-  if ( isClosed_ )
+  if ( isClosed_ ) // 如果流已经关闭，不能再写
     return;
-  int len = min( data.size(), available_capacity() );
-  buf_.append( data.substr( 0, len ) );
-  bytes_pushed_ += len;
+
+  int len = min( data.size(), available_capacity() ); // 最多写入可用容量
+  buf_.append( data.substr( 0, len ) ); // 写入缓冲区
+  bytes_pushed_ += len; // 更新写入总字节数
+
   debug( "Writer::push({}) not yet implemented", data );
 }
 
-// Signal that the stream has reached its ending. Nothing more will be written.
+// 标记流结束（不会再写入数据）
 void Writer::close()
 {
   isClosed_ = true;
   debug( "Writer::close() not yet implemented" );
 }
 
-// Has the stream been closed?
+// 判断流是否关闭
 bool Writer::is_closed() const
 {
   debug( "Writer::is_closed() not yet implemented" );
-  return isClosed_; // Your code here.
+  return isClosed_;
 }
-// How many bytes can be pushed to the stream right now?
+
+// 当前还能写入多少字节
 uint64_t Writer::available_capacity() const
 {
   debug( "Writer::available_capacity() not yet implemented" );
-  return capacity_ - buf_.size(); // Your code here.
+  return capacity_ - buf_.size();
 }
 
-// Total number of bytes cumulatively pushed to the stream
+// 已经写入的总字节数
 uint64_t Writer::bytes_pushed() const
 {
   debug( "Writer::bytes_pushed() not yet implemented" );
-  return bytes_pushed_; // Your code here.
+  return bytes_pushed_;
 }
 
-// Peek at the next bytes in the buffer -- ideally as many as possible.
-// It's not required to return a string_view of the *whole* buffer, but
-// if the peeked string_view is only one byte at a time, it will probably force
-// the caller to do a lot of extra work.
+// 查看缓冲区数据（不删除）
 string_view Reader::peek() const
 {
-  if ( buf_.empty() )
+  if ( buf_.empty() ) // 没有数据
     return {};
+
   debug( "Reader::peek() not yet implemented" );
-  return string_view( buf_ ); // Your code here.
+  return string_view( buf_ ); // 返回整个缓冲区
 }
 
-// Remove `len` bytes from the buffer.
+// 从缓冲区删除 len 字节
 void Reader::pop( uint64_t len )
 {
-  len = min( len, buf_.size() );
-  buf_ = buf_.substr( len );
-  bytes_popped_ += len;
-  debug( "heReader::pop({}) not yet implemented", len );
+  len = min( len, buf_.size() ); // 防止越界
+  buf_ = buf_.substr( len ); // 删除前 len 字节
+  bytes_popped_ += len; // 更新读取字节数
+
+  debug( "Reader::pop({}) not yet implemented", len );
 }
 
-// Is the stream finished (closed and fully popped)?
+// 判断流是否结束（关闭且缓冲区为空）
 bool Reader::is_finished() const
 {
   debug( "Reader::is_finished() not yet implemented" );
-  return buf_.empty() && isClosed_; // Your code here.
+  return buf_.empty() && isClosed_;
 }
 
-// Number of bytes currently buffered (pushed and not popped)
+// 当前缓冲区还有多少字节
 uint64_t Reader::bytes_buffered() const
 {
   debug( "Reader::bytes_buffered() not yet implemented" );
-  return buf_.size(); // Your code here.
+  return buf_.size();
 }
 
-// Total number of bytes cumulatively popped from stream
+// 已经读取的总字节数
 uint64_t Reader::bytes_popped() const
 {
   debug( "Reader::bytes_popped() not yet implemented" );
-  return bytes_popped_; // Your code here.
+  return bytes_popped_;
 }
