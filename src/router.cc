@@ -1,30 +1,53 @@
 #include "router.hh"
-#include "debug.hh"
-
 #include <iostream>
 
 using namespace std;
 
-// route_prefix: The "up-to-32-bit" IPv4 address prefix to match the datagram's destination address against
-// prefix_length: For this route to be applicable, how many high-order (most-significant) bits of
-//    the route_prefix will need to match the corresponding bits of the datagram's destination address?
-// next_hop: The IP address of the next hop. Will be empty if the network is directly attached to the router (in
-//    which case, the next hop address should be the datagram's final destination).
-// interface_num: The index of the interface to send the datagram out on.
-void Router::add_route( const uint32_t route_prefix,
-                        const uint8_t prefix_length,
-                        const optional<Address> next_hop,
-                        const size_t interface_num )
+// 将路由项添加到路由表
+void Router::add_route( const uint32_t route_prefix,const uint8_t prefix_length,const optional<Address> next_hop,const size_t interface_num )
 {
-  cerr << "DEBUG: adding route " << Address::from_ipv4_numeric( route_prefix ).ip() << "/"
-       << static_cast<int>( prefix_length ) << " => " << ( next_hop.has_value() ? next_hop->ip() : "(direct)" )
-       << " on interface " << interface_num << "\n";
-
-  debug( "unimplemented add_route() called" );
+  // 将路由信息存入对应前缀长度的哈希表中
+  routing_table_[prefix_length][route_prefix] = { interface_num, next_hop };
 }
 
-// Go through all the interfaces, and route every incoming datagram to its proper outgoing interface.
+// 实现最长前缀匹配查找
+[[nodiscard]] auto Router::match( uint32_t addr ) const noexcept -> optional<info>
+{
+  // 从最长的前缀长度 32 开始递减匹配，确保找到的是“最长前缀” [cite: 88, 89]
+  for ( int len = 32; len >= 0; --len ) 
+  {
+    uint32_t mask = ( len == 0 ) ? 0 : 0xFFFFFFFF << ( 32 - len ); 
+    uint32_t masked_addr = addr & mask; // 获取目标 IP 在当前长度下的网络前缀
+
+    // 在当前前缀长度的哈希表中查找
+    if ( routing_table_[len].contains( masked_addr ) )
+    {
+      return routing_table_[len].at( masked_addr );
+    }
+  }
+  return nullopt; // 若遍历完所有长度均未匹配，则返回空
+}
+
+// 路由器的主要处理流程
 void Router::route()
 {
-  debug( "unimplemented route() called" );
+  for ( const auto& interface : interfaces_ ) 
+  { // 遍历所有接口
+    auto&& datagrams_received { interface->datagrams_received() };
+    while ( not datagrams_received.empty() ) 
+    {
+      InternetDatagram datagram { move( datagrams_received.front() ) };
+      datagrams_received.pop();
+      if ( datagram.header.ttl <= 1 ) continue;//转发前先-1，所以如果是1也跳过
+      
+      datagram.header.ttl -= 1;
+      datagram.header.compute_checksum();// 2. 重新计算校验和（因为 TTL 改变了）
+      const auto mp = match( datagram.header.dst ); // 3. 执行最长前缀匹配查找
+      if ( not mp.has_value() ) continue; // 无匹配路由则丢弃
+      const auto& [num, next_hop] = mp.value();
+      // 下一跳为空，则直接发给目标 IP，否则发给指定的下一跳路由器
+      interfaces_[num]->send_datagram( datagram, next_hop.value_or( Address::from_ipv4_numeric( datagram.header.dst ) ) 
+      );
+    }
+  }
 }

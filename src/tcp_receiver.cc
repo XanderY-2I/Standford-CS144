@@ -1,11 +1,15 @@
 #include "tcp_receiver.hh"
 #include "debug.hh"
-
+#include <iostream>
 using namespace std;
 
 void TCPReceiver::receive( TCPSenderMessage message )
 {
-  if(writer().has_error()) return ;//自检
+  if(writer().has_error()) 
+  { 
+    return ;//自检
+  }
+
   if(message.RST)//紧急熔断
   {
     reader().set_error();
@@ -13,7 +17,8 @@ void TCPReceiver::receive( TCPSenderMessage message )
   }
   if(!zero_point_.has_value())//建立连接
   {
-    if(!message.SYN) return;
+    if(!message.SYN){
+    return;}
     zero_point_.emplace(message.seqno);
   }
     // 1. 计算当前报文起始编号的绝对序列号
@@ -27,8 +32,9 @@ void TCPReceiver::receive( TCPSenderMessage message )
     
     //边界检查：如果这个包只有SYN且没有数据，first_byte_abs_seqno 会是1。
     //但如果收到一个非法的、在 SYN 之前的包，first_byte_abs_seqno 可能是0。
-    if (first_byte_abs_seqno == 0) return; //绝对序号 0 是给 SYN 专用的，数据必须从 1 开始
-    
+    if (first_byte_abs_seqno == 0) {
+      return; //绝对序号 0 是给 SYN 专用的，数据必须从 1 开始
+    }
     uint64_t stream_idx = first_byte_abs_seqno - 1;
 
     reassembler_.insert( stream_idx, std::move( message.payload ), message.FIN );

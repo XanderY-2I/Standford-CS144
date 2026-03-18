@@ -82,7 +82,10 @@ void apply_configs( const span<char*>& args,
 
   unordered_map<string, size_t> iface_name_to_idx;
   vector<string> fields;
-  for ( const string_view config : args | views::drop( 1 ) ) { // ignore argv[0] (the name of the program)
+  for (size_t i = 1; i < args.size(); ++i ) 
+  { // ignore argv[0] (the name of the program)
+    string_view config = args[i];
+
     split_config( config, fields );
 
     if ( fields.at( 0 ) == "interface" ) {
