@@ -1,5 +1,4 @@
 #include "byte_stream.hh"
-#include "debug.hh"
 using namespace std;
 
 // 构造函数：初始化 ByteStream

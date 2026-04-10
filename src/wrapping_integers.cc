@@ -1,5 +1,4 @@
 #include "wrapping_integers.hh"
-#include "debug.hh"
 using namespace std;
 Wrap32 Wrap32::wrap( uint64_t n, Wrap32 zero_point )
 {
